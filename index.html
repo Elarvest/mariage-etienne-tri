@@ -1,0 +1,494 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Le film d'Etienne — aidez-nous à ordonner les photos</title>
+<style>
+:root{--bg:#faf8f5;--card:#f0ebe3;--fg:#2a2724;--muted:#8a827a;--line:#e7e1d8;--accent:#c0562b;--accent-soft:#f6e6de;--ok:#2e7d32}
+@media(prefers-color-scheme:dark){:root{--bg:#1a1815;--card:#262320;--fg:#ece7e0;--muted:#9a9088;--line:#33302b;--accent:#e07a4a;--accent-soft:#3a2b23;--ok:#7bd88f}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,system-ui,"Segoe UI",sans-serif;background:var(--bg);color:var(--fg);line-height:1.5}
+button{font-family:inherit}
+
+/* ---------- porte ---------- */
+#gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.gatebox{max-width:420px;width:100%}
+.gatebox h1{font-size:1.5rem;margin:0 0 10px;letter-spacing:-.01em}
+.gatebox p{color:var(--muted);margin:0 0 22px;font-size:.95rem}
+.field{display:flex;flex-direction:column;gap:8px}
+label{font-size:.85rem;font-weight:600}
+input[type=password],input[type=text]{font-size:1rem;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);width:100%}
+input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:12px 18px;font-weight:600;font-size:.95rem;cursor:pointer}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.btn.small{padding:8px 12px;font-size:.85rem}
+.err{color:var(--accent);font-size:.88rem;min-height:1.3em;margin:10px 0 0}
+
+/* ---------- app ---------- */
+#app{display:none}
+header{position:sticky;top:0;z-index:30;background:var(--bg);border-bottom:1px solid var(--line);padding:12px 18px}
+.hrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;max-width:1200px;margin:0 auto}
+h1.title{font-size:1.05rem;margin:0;flex:1;min-width:180px;letter-spacing:-.01em}
+#who{max-width:150px;font-size:.9rem;padding:8px 10px}
+#status{font-size:.85rem;color:var(--ok);font-weight:600}
+.help{max-width:1200px;margin:8px auto 0;color:var(--muted);font-size:.85rem}
+.banner{background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin:12px auto;max-width:1164px;font-size:.9rem;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.banner b{font-weight:700}
+.banner span{flex:1;min-width:200px}
+
+section.stage{padding:6px 18px 26px;max-width:1200px;margin:0 auto}
+h2{font-size:1rem;border-bottom:2px solid var(--accent);padding-bottom:6px;margin:22px 0 0;display:flex;align-items:baseline;gap:8px}
+h2 em{color:var(--muted);font-style:normal;font-size:.8rem;font-weight:400}
+.grid{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px;min-height:120px;counter-reset:n;align-items:flex-start}
+.card{width:150px;background:var(--card);border-radius:10px;overflow:hidden;position:relative;border:1px solid var(--line)}
+.card .ph{position:relative;display:block;width:100%;border:0;padding:0;background:none;cursor:zoom-in}
+.card img{width:100%;height:150px;object-fit:cover;display:block;background:var(--line)}
+.card .num{position:absolute;top:5px;left:5px;background:var(--accent);color:#fff;font-size:.72rem;font-weight:700;border-radius:20px;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;padding:0 6px}
+.acts{display:flex;gap:2px;padding:4px}
+.acts button{flex:1;border:0;background:transparent;color:var(--muted);border-radius:6px;padding:6px 0;font-size:.8rem;cursor:pointer;min-height:32px}
+.acts button:hover{background:var(--line);color:var(--fg)}
+.acts button.take{flex:1.6;font-weight:600;color:var(--accent)}
+.card.taken{outline:2px solid var(--accent);opacity:.55}
+.card.ghosted{opacity:.25;outline:2px dashed var(--accent)}
+
+.drag-clone{position:fixed;z-index:999;width:150px;opacity:.92;box-shadow:0 12px 34px rgba(0,0,0,.4);transform:rotate(2deg);border-radius:10px;overflow:hidden;pointer-events:none;background:var(--card)}
+.drag-clone img{width:100%;height:150px;object-fit:cover;display:block}
+.drag-clone .acts,.drag-clone .num{display:none}
+
+/* zone ecartees */
+.out{margin-top:16px;border-top:1px dashed var(--line);padding-top:12px}
+.out h3{font-size:.85rem;color:var(--muted);margin:0 0 10px;font-weight:600}
+.out .grid{min-height:0;counter-reset:none}
+.out .card{width:110px;filter:grayscale(1);opacity:.7}
+.out .card img{height:110px}
+.out .card .num{display:none}
+.out:not(.has) {display:none}
+
+/* mode placement */
+.slot{width:26px;align-self:stretch;min-height:150px;border:2px dashed var(--accent);border-radius:8px;background:transparent;cursor:pointer;padding:0;display:none}
+.slot:hover{background:var(--accent);}
+body.placing .slot{display:block}
+body.placing .card:not(.taken) .acts{visibility:hidden}
+#placebar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:40;background:var(--accent);color:#fff;padding:12px 18px;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:.9rem;font-weight:600}
+body.placing #placebar{display:flex}
+#placebar button{background:#fff;color:var(--accent);border:0;border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer}
+
+/* lightbox */
+#lb{display:none;position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.92);align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:20px}
+#lb.on{display:flex}
+#lb img{max-width:100%;max-height:80vh;object-fit:contain;border-radius:6px}
+#lb .lbnav{display:flex;gap:12px;align-items:center}
+#lb button{background:rgba(255,255,255,.14);color:#fff;border:0;border-radius:8px;padding:10px 16px;font-size:1rem;cursor:pointer}
+#lbcap{color:#ddd;font-size:.85rem}
+
+footer{max-width:1200px;margin:0 auto;padding:10px 18px 90px;color:var(--muted);font-size:.85rem}
+.bar{max-width:1200px;margin:0 auto;padding:0 18px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+#prog{height:4px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:10px}
+#prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+@media (max-width:520px){
+  .card{width:calc(50% - 6px)}
+  .card img{height:38vw}
+  .out .card{width:calc(33% - 8px)}
+  .out .card img{height:22vw}
+  /* en mode placement, la grille devient une liste : les points d'insertion sont
+     des barres pleine largeur, faciles a viser au doigt */
+  body.placing .grid[data-role="in"]{flex-direction:column;gap:6px}
+  body.placing .card{width:100%}
+  body.placing .card img{height:22vh}
+  body.placing .slot{width:100%;min-height:40px;align-self:auto}
+}
+</style></head><body>
+
+<div id="gate">
+  <div class="gatebox">
+    <h1>Le film d'Etienne</h1>
+    <p>Pour le mariage d'Etienne et Céline. Les photos sont protégées : entre le mot de passe qu'Eloi t'a transmis.</p>
+    <form class="field" id="gform">
+      <label for="pw">Mot de passe</label>
+      <input type="password" id="pw" autocomplete="current-password" autocapitalize="off" spellcheck="false">
+      <button class="btn" id="go" type="submit">Entrer</button>
+    </form>
+    <p class="err" id="gerr"></p>
+    <div id="prog"><i></i></div>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="hrow">
+      <h1 class="title">Ordonner les photos du film</h1>
+      <input type="text" id="who" placeholder="Ton prénom" autocomplete="given-name">
+      <button class="btn" id="share">Copier mon lien</button>
+      <span id="status"></span>
+    </div>
+    <p class="help">Les photos passent dans l'ordre affiché, période après période. Sur ordinateur tu peux les glisser à la souris. Sur téléphone, utilise <b>placer</b> puis choisis la position, ou les flèches. <b>retirer</b> écarte une photo du film. Quand c'est bon, mets ton prénom et clique sur « Copier mon lien », puis colle-le dans la conversation familiale.</p>
+  </header>
+
+  <div class="banner" id="banner" style="display:none"><span id="bantxt"></span><button class="btn small ghost" id="reset">Repartir de l'ordre d'origine</button></div>
+
+  <main id="stages"></main>
+
+  <div class="bar">
+    <button class="btn" id="share2">Copier mon lien</button>
+    <span id="status2" style="font-size:.85rem;color:var(--muted)"></span>
+  </div>
+  <footer>Rien n'est enregistré en ligne : ton travail reste dans ce navigateur jusqu'à ce que tu copies ton lien.</footer>
+</div>
+
+<div id="placebar">
+  <span id="placetxt">Choisis la position</span>
+  <button id="cancelplace" type="button">Annuler</button>
+</div>
+
+<div id="lb" role="dialog" aria-modal="true">
+  <img id="lbimg" alt="">
+  <div class="lbnav">
+    <button id="lbprev" type="button" aria-label="Photo précédente">‹</button>
+    <span id="lbcap"></span>
+    <button id="lbnext" type="button" aria-label="Photo suivante">›</button>
+    <button id="lbclose" type="button">Fermer</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const LS_KEY = "mariage-etienne-tri";
+let MANIFEST = null, URLS = {}, KEY = null, INCOMING = null;
+
+/* ---------- crypto ---------- */
+async function deriveKey(pw, saltHex, iterations){
+  const salt = Uint8Array.from(saltHex.match(/../g).map(h => parseInt(h, 16)));
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2", salt, iterations, hash:"SHA-256"},
+    base, {name:"AES-GCM", length:256}, false, ["decrypt"]);
+}
+async function open_(key, buf){
+  const b = new Uint8Array(buf);
+  return crypto.subtle.decrypt({name:"AES-GCM", iv:b.slice(0,12)}, key, b.slice(12));
+}
+async function fetchEnc(path){
+  const r = await fetch(path, {cache:"force-cache"});
+  if(!r.ok) throw new Error("fetch " + path);
+  return r.arrayBuffer();
+}
+
+/* ---------- chargement ---------- */
+async function unlock(pw){
+  const meta = await (await fetch("data/meta.json", {cache:"no-cache"})).json();
+  const key = await deriveKey(pw, meta.salt, meta.iterations);
+  const manifest = JSON.parse(new TextDecoder().decode(await open_(key, await fetchEnc("data/m.enc"))));
+  KEY = key; MANIFEST = manifest;
+  return meta;
+}
+async function loadThumbs(count, onProgress){
+  let done = 0, next = 0;
+  const worker = async () => {
+    while(next < count){
+      const i = next++;
+      try{
+        const blob = new Blob([await open_(KEY, await fetchEnc("data/" + i + ".enc"))], {type:"image/jpeg"});
+        URLS[i] = URL.createObjectURL(blob);
+        const img = document.querySelector('.card[data-i="'+i+'"] img');
+        if(img) img.src = URLS[i];
+      }catch(e){ /* une vignette manquante ne doit pas bloquer le reste */ }
+      onProgress(++done);
+    }
+  };
+  await Promise.all(Array.from({length:6}, worker));
+}
+
+/* ---------- rendu ---------- */
+function cardEl(it){
+  const c = document.createElement("div");
+  c.className = "card"; c.dataset.i = it.i;
+  c.innerHTML =
+    '<button class="ph" type="button" aria-label="Agrandir"><img alt="" loading="lazy" draggable="false"><span class="num"></span></button>' +
+    '<div class="acts">' +
+      '<button type="button" data-a="-1" aria-label="Reculer">&lsaquo;</button>' +
+      '<button type="button" data-a="take" class="take">placer</button>' +
+      '<button type="button" data-a="1" aria-label="Avancer">&rsaquo;</button>' +
+      '<button type="button" data-a="out" aria-label="Retirer du film">&times;</button>' +
+    '</div>';
+  return c;
+}
+function build(){
+  const host = $("#stages"); host.innerHTML = "";
+  MANIFEST.stages.forEach((st, si) => {
+    const sec = document.createElement("section");
+    sec.className = "stage"; sec.dataset.s = si;
+    sec.innerHTML = '<h2>' + st.label + ' <em class="cnt"></em></h2>' +
+      '<div class="grid" data-role="in"></div>' +
+      '<div class="out"><h3>Écartées du film</h3><div class="grid" data-role="out"></div></div>';
+    host.appendChild(sec);
+  });
+  MANIFEST.items.forEach(it => {
+    document.querySelector('section.stage[data-s="'+it.s+'"] .grid[data-role="in"]').appendChild(cardEl(it));
+  });
+}
+function readState(){
+  const order = MANIFEST.stages.map((_, si) =>
+    [...document.querySelectorAll('section.stage[data-s="'+si+'"] .grid[data-role="in"] .card')].map(c => +c.dataset.i));
+  const out = [...document.querySelectorAll('.grid[data-role="out"] .card')].map(c => +c.dataset.i);
+  return {order, out, who: $("#who").value.trim()};
+}
+function applyState(st){
+  const seen = new Set();
+  (st.order || []).forEach((list, si) => {
+    const grid = document.querySelector('section.stage[data-s="'+si+'"] .grid[data-role="in"]');
+    if(!grid) return;
+    list.forEach(i => {
+      const c = document.querySelector('.card[data-i="'+i+'"]');
+      if(c && !seen.has(i)){ grid.appendChild(c); seen.add(i); }
+    });
+  });
+  (st.out || []).forEach(i => {
+    const c = document.querySelector('.card[data-i="'+i+'"]');
+    if(!c || seen.has(i)) return;
+    const si = MANIFEST.items[i] ? MANIFEST.items[i].s : 0;
+    document.querySelector('section.stage[data-s="'+si+'"] .grid[data-role="out"]').appendChild(c);
+    seen.add(i);
+  });
+  refresh();
+}
+function refresh(){
+  document.querySelectorAll("section.stage").forEach(sec => {
+    const ins = sec.querySelectorAll('.grid[data-role="in"] .card');
+    ins.forEach((c, n) => { c.querySelector(".num").textContent = n + 1; });
+    sec.querySelector(".cnt").textContent = "(" + ins.length + ")";
+    const out = sec.querySelector(".out");
+    out.classList.toggle("has", out.querySelectorAll(".card").length > 0);
+  });
+  document.querySelectorAll('.grid[data-role="out"] .card .acts button').forEach(b => {
+    if(b.dataset.a === "out"){ b.textContent = "remettre"; b.setAttribute("aria-label", "Remettre dans le film"); }
+  });
+  document.querySelectorAll('.grid[data-role="in"] .card .acts button').forEach(b => {
+    if(b.dataset.a === "out"){ b.innerHTML = "&times;"; b.setAttribute("aria-label", "Retirer du film"); }
+  });
+  save();
+}
+
+/* ---------- persistance locale ---------- */
+function save(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(Object.assign(readState(), {v: MANIFEST.version}))); }catch(e){}
+}
+function restore(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return false;
+    const st = JSON.parse(raw);
+    if(st.v !== MANIFEST.version) return false;
+    if(st.who) $("#who").value = st.who;
+    applyState(st);
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ---------- lien partageable ---------- */
+function encodeState(){
+  const st = readState();
+  const o = st.order.map(l => l.map(i => i.toString(36)).join(".")).join("|");
+  const x = st.out.map(i => i.toString(36)).join(".");
+  return "#v=" + MANIFEST.version + "&p=" + encodeURIComponent(st.who) + "&o=" + o + (x ? "&x=" + x : "");
+}
+function decodeHash(h){
+  if(!h || h.length < 4) return null;
+  const q = new URLSearchParams(h.replace(/^#/, ""));
+  const o = q.get("o");
+  if(!o) return null;
+  const num = s => s ? s.split(".").filter(Boolean).map(t => parseInt(t, 36)) : [];
+  return {v: q.get("v"), who: q.get("p") || "", order: o.split("|").map(num), out: num(q.get("x"))};
+}
+
+/* ---------- glisser a la souris ---------- */
+let drag = null;
+function insertRef(grid, x, y){
+  const els = [...grid.querySelectorAll(".card:not(.ghosted)")];
+  let best = null, bd = Infinity, after = false;
+  for(const el of els){
+    const b = el.getBoundingClientRect(), cx = b.left + b.width/2, cy = b.top + b.height/2;
+    const d = Math.hypot(x - cx, y - cy);
+    if(d < bd){ bd = d; best = el; after = x > cx; }
+  }
+  if(!best) return null;
+  return after ? best.nextElementSibling : best;
+}
+function onDown(e, card){
+  if(e.pointerType !== "mouse" || e.button !== 0) return;   // tactile : scroll natif preserve
+  if(e.target.closest("button[data-a]")) return;
+  if(document.body.classList.contains("placing")) return;
+  e.preventDefault();
+  const r = card.getBoundingClientRect();
+  const clone = card.cloneNode(true);
+  clone.className = "drag-clone";
+  clone.style.left = r.left + "px"; clone.style.top = r.top + "px";
+  document.body.appendChild(clone);
+  card.classList.add("ghosted");
+  drag = {card, clone, dx: e.clientX - r.left, dy: e.clientY - r.top};
+  window.addEventListener("pointermove", onMove);
+  window.addEventListener("pointerup", onUp);
+}
+function onMove(e){
+  if(!drag) return;
+  drag.clone.style.left = (e.clientX - drag.dx) + "px";
+  drag.clone.style.top = (e.clientY - drag.dy) + "px";
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  const grid = under && under.closest(".grid");
+  if(!grid) return;
+  const ref = insertRef(grid, e.clientX, e.clientY);
+  if(ref == null) grid.appendChild(drag.card);
+  else if(ref !== drag.card) grid.insertBefore(drag.card, ref);
+}
+function onUp(){
+  if(drag){ drag.clone.remove(); drag.card.classList.remove("ghosted"); drag = null; refresh(); }
+  window.removeEventListener("pointermove", onMove);
+  window.removeEventListener("pointerup", onUp);
+}
+
+/* ---------- mode placer (tactile et clavier) ---------- */
+let taken = null;
+function startPlace(card){
+  taken = card;
+  card.classList.add("taken");
+  document.body.classList.add("placing");
+  $("#placetxt").textContent = "Où placer cette photo ? Touche un espace en pointillés.";
+  document.querySelectorAll('.grid[data-role="in"]').forEach(grid => {
+    const cards = [...grid.querySelectorAll(".card")];
+    cards.forEach(c => grid.insertBefore(slotEl(), c));
+    grid.appendChild(slotEl());
+  });
+  card.scrollIntoView({block:"center", behavior:"smooth"});
+}
+function slotEl(){
+  const b = document.createElement("button");
+  b.className = "slot"; b.type = "button"; b.setAttribute("aria-label", "Placer ici");
+  b.onclick = () => { if(taken){ b.parentNode.insertBefore(taken, b); endPlace(); } };
+  return b;
+}
+function endPlace(){
+  if(taken) taken.classList.remove("taken");
+  taken = null;
+  document.body.classList.remove("placing");
+  document.querySelectorAll(".slot").forEach(s => s.remove());
+  refresh();
+}
+
+/* ---------- lightbox ---------- */
+let lbList = [], lbPos = 0;
+function openLb(i){
+  lbList = [...document.querySelectorAll('.grid[data-role="in"] .card')].map(c => +c.dataset.i);
+  lbPos = Math.max(0, lbList.indexOf(i));
+  showLb(); $("#lb").classList.add("on");
+}
+function showLb(){
+  const i = lbList[lbPos];
+  $("#lbimg").src = URLS[i] || "";
+  $("#lbcap").textContent = (lbPos + 1) + " / " + lbList.length;
+}
+function moveLb(d){ if(!lbList.length) return; lbPos = (lbPos + d + lbList.length) % lbList.length; showLb(); }
+
+/* ---------- evenements ---------- */
+function wire(){
+  document.querySelectorAll(".card").forEach(c => c.addEventListener("pointerdown", e => onDown(e, c)));
+  $("#stages").addEventListener("click", e => {
+    const ph = e.target.closest(".ph");
+    if(ph){ openLb(+ph.closest(".card").dataset.i); return; }
+    const btn = e.target.closest("button[data-a]");
+    if(!btn) return;
+    const card = btn.closest(".card"), a = btn.dataset.a;
+    if(a === "take"){ document.body.classList.contains("placing") ? endPlace() : startPlace(card); return; }
+    if(a === "out"){
+      const sec = card.closest("section.stage");
+      const inOut = card.closest('.grid[data-role="out"]');
+      (inOut ? sec.querySelector('.grid[data-role="in"]') : sec.querySelector('.grid[data-role="out"]')).appendChild(card);
+      refresh(); return;
+    }
+    const d = +a, grid = card.parentNode;
+    if(d < 0 && card.previousElementSibling) grid.insertBefore(card, card.previousElementSibling);
+    if(d > 0 && card.nextElementSibling) grid.insertBefore(card.nextElementSibling, card);
+    refresh();
+  });
+  $("#cancelplace").onclick = endPlace;
+  $("#who").addEventListener("input", save);
+
+  const doShare = async (statusEl) => {
+    if(!$("#who").value.trim()){
+      statusEl.textContent = "Mets ton prénom d'abord.";
+      $("#who").focus(); return;
+    }
+    const link = location.origin + location.pathname + encodeState();
+    try{
+      await navigator.clipboard.writeText(link);
+      statusEl.textContent = "Lien copié. Colle-le dans la conversation familiale.";
+    }catch(e){
+      const ta = document.createElement("textarea");
+      ta.value = link; ta.style.cssText = "position:fixed;top:50%;left:5%;width:90%;height:6em;z-index:99";
+      document.body.appendChild(ta); ta.select();
+      statusEl.textContent = "Copie manuelle : sélectionne le texte affiché puis copie-le.";
+      setTimeout(() => ta.remove(), 20000);
+    }
+  };
+  $("#share").onclick = () => doShare($("#status"));
+  $("#share2").onclick = () => doShare($("#status2"));
+  $("#reset").onclick = () => {
+    localStorage.removeItem(LS_KEY);
+    history.replaceState(null, "", location.pathname);
+    location.reload();
+  };
+  $("#lbclose").onclick = () => $("#lb").classList.remove("on");
+  $("#lbprev").onclick = () => moveLb(-1);
+  $("#lbnext").onclick = () => moveLb(1);
+  $("#lb").addEventListener("click", e => { if(e.target.id === "lb") $("#lb").classList.remove("on"); });
+  document.addEventListener("keydown", e => {
+    if($("#lb").classList.contains("on")){
+      if(e.key === "Escape") $("#lb").classList.remove("on");
+      if(e.key === "ArrowLeft") moveLb(-1);
+      if(e.key === "ArrowRight") moveLb(1);
+      return;
+    }
+    if(e.key === "Escape" && taken) endPlace();
+  });
+}
+
+/* ---------- demarrage ---------- */
+$("#gform").addEventListener("submit", async e => {
+  e.preventDefault();
+  const pw = $("#pw").value;
+  $("#gerr").textContent = ""; $("#go").disabled = true; $("#go").textContent = "Déchiffrement…";
+  let meta;
+  try{
+    meta = await unlock(pw);
+  }catch(err){
+    $("#gerr").textContent = "Mot de passe incorrect (ou photos indisponibles).";
+    $("#go").disabled = false; $("#go").textContent = "Entrer";
+    return;
+  }
+  try{ sessionStorage.setItem("me-pw", pw); }catch(e){}
+  build();
+  wire();
+  INCOMING = decodeHash(location.hash);
+  if(INCOMING){
+    const who = INCOMING.who || "quelqu'un";
+    $("#bantxt").innerHTML = INCOMING.v && INCOMING.v !== MANIFEST.version
+      ? "Proposition de <b>" + who + "</b>, faite sur une version différente du jeu de photos. Les photos ajoutées depuis restent en fin de leur période."
+      : "Tu regardes la proposition de <b>" + who + "</b>. Tu peux la modifier et copier ton propre lien.";
+    $("#banner").style.display = "flex";
+    applyState(INCOMING);
+    if(INCOMING.who) $("#who").value = INCOMING.who;
+  }else if(!restore()){
+    refresh();
+  }
+  $("#gate").style.display = "none";
+  $("#app").style.display = "block";
+  const bar = $("#prog i");
+  await loadThumbs(meta.count, n => { bar.style.width = (100 * n / meta.count) + "%"; });
+});
+
+// pre-remplissage si on revient dans la meme session
+try{
+  const pw = sessionStorage.getItem("me-pw");
+  if(pw){ $("#pw").value = pw; $("#go").textContent = "Continuer"; }
+}catch(e){}
+</script>
+</body></html>
