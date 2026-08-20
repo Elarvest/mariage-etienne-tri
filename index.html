@@ -168,13 +168,15 @@ async function open_(key, buf){
   const b = new Uint8Array(buf);
   return crypto.subtle.decrypt({name:"AES-GCM", iv:b.slice(0,12)}, key, b.slice(12));
 }
-let VERSION = "";   /* estampille du jeu de photos, pour casser le cache */
+let ESTAMPILLE = "";   /* change des que le chiffrement change, pour casser le cache */
 async function fetchEnc(path){
-  /* Les vignettes sont immuables POUR UNE VERSION donnee : on les met en cache
-     agressivement, mais l'URL porte la version. Sans ca, "force-cache" resservait
-     indefiniment les vignettes d'un build precedent, chiffrees avec un autre sel,
-     et la page annoncait "mot de passe incorrect" alors que le mot de passe etait bon. */
-  const url = path + (VERSION ? "?v=" + VERSION : "");
+  /* Les vignettes sont immuables pour un chiffrement donne : on les met en cache
+     agressivement, mais l'URL porte une estampille. Sans ca, "force-cache" resservait
+     indefiniment les vignettes d'un build precedent, chiffrees avec un autre sel, et la
+     page annoncait "mot de passe incorrect" alors que le mot de passe etait bon.
+     L'estampille vient du SEL, pas de la version : la version ne depend que des photos,
+     donc deux builds du meme jeu la laissent identique alors que le sel, lui, change. */
+  const url = path + (ESTAMPILLE ? "?s=" + ESTAMPILLE : "");
   const r = await fetch(url, {cache:"force-cache"});
   if(!r.ok) throw new Error("fetch " + url);
   return r.arrayBuffer();
@@ -183,7 +185,7 @@ async function fetchEnc(path){
 /* ---------- chargement ---------- */
 async function unlock(pw){
   const meta = await (await fetch("data/meta.json", {cache:"no-cache"})).json();
-  VERSION = meta.version || "";
+  ESTAMPILLE = (meta.salt || "").slice(0, 12);
   const key = await deriveKey(pw, meta.salt, meta.iterations);
   const manifest = JSON.parse(new TextDecoder().decode(await open_(key, await fetchEnc("data/m.enc"))));
   KEY = key; MANIFEST = manifest;
